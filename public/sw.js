@@ -1,14 +1,14 @@
 const CACHE_NAME = 'code-now-v1';
 const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/site.webmanifest',
-  '/favicon.svg',
-  '/favicon.ico',
-  '/favicon-96x96.png',
-  '/apple-touch-icon.png',
-  '/web-app-manifest-192x192.png',
-  '/web-app-manifest-512x512.png'
+  './',
+  './index.html',
+  './site.webmanifest',
+  './favicon.svg',
+  './favicon.ico',
+  './favicon-96x96.png',
+  './apple-touch-icon.png',
+  './web-app-manifest-192x192.png',
+  './web-app-manifest-512x512.png'
 ];
 
 // Install Service Worker and cache core static assets
@@ -71,7 +71,7 @@ self.addEventListener('fetch', (event) => {
             return cachedResponse;
           }
           if (event.request.mode === 'navigate') {
-            return caches.match('/index.html');
+            return caches.match('./index.html');
           }
         });
       })

@@ -5,6 +5,7 @@ import path from "path";
 
 // https://vite.dev/config/
 export default defineConfig({
+	base: process.env.VITE_BASE_PATH || "/code_now/",
 	server: {
 		host: "0.0.0.0",
 		allowedHosts: ["f5546ea873db.ngrok-free.app"],

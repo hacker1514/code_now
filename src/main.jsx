@@ -21,7 +21,10 @@ const router = createBrowserRouter(
 			<Route path="/playground" element={<Playground />} />
 			<Route path="*" element={<Navigate to="/" replace />} />
 		</Route>
-	)
+	),
+	{
+		basename: import.meta.env.BASE_URL,
+	}
 );
 
 createRoot(document.getElementById("root")).render(
@@ -38,8 +41,9 @@ createRoot(document.getElementById("root")).render(
 // Register PWA Service Worker for offline app loading
 if ("serviceWorker" in navigator) {
 	window.addEventListener("load", () => {
+		const swPath = `${import.meta.env.BASE_URL}sw.js`;
 		navigator.serviceWorker
-			.register("/sw.js")
+			.register(swPath)
 			.then((reg) => console.log("Code Now PWA Service Worker registered:", reg.scope))
 			.catch((err) => console.log("Service Worker registration failed:", err));
 	});
