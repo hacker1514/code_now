@@ -523,103 +523,144 @@ export default function Playground() {
 		setActiveTab("output");
 		setExecutionResult({ status: "running", output: "Compiling & executing code..." });
 
+		let executionSuccess = false;
 		const startTime = performance.now();
 
-		try {
-			const response = await axios.post("/api/compiler/execute", {
-				sourceCode: code,
-				language: language,
-				stdin: stdin,
-			});
+		// Attempt 1: NextLeet Compiler Backend (/api proxy or direct endpoint)
+		const compilerEndpoints = [
+			"/api/compiler/execute",
+			"https://playground.nextleet.com/api/compiler/execute",
+		];
 
-			const endTime = performance.now();
-			const duration = ((endTime - startTime) / 1000).toFixed(2);
-			const data = response.data;
-
-			let outputText = "";
-			if (data.stdout) {
-				outputText += data.stdout;
-			}
-			if (data.stderr) {
-				if (outputText) outputText += "\n";
-				outputText += `[Error]:\n${data.stderr}`;
-			}
-			if (data.compile_output) {
-				if (outputText) outputText += "\n";
-				outputText += `[Compiler Output]:\n${data.compile_output}`;
-			}
-
-			const isError = Boolean(data.stderr || (data.compile_output && !data.stdout));
-
-			setExecutionResult({
-				status: isError ? "error" : "success",
-				output: outputText.trim() || "(No output produced)",
-				executionTime: `${duration}s`,
-			});
-
-			if (!isError) {
-				toast.success("Execution completed!");
-			} else {
-				toast.error("Execution produced errors.");
-			}
-		} catch (error) {
-			// Fallback execution engine if CORS or server network fails
+		for (const endpoint of compilerEndpoints) {
 			try {
-				const pistonLangMap = {
-					python: { lang: "python", ver: "3.10.0" },
-					cpp: { lang: "c++", ver: "10.2.0" },
-					c: { lang: "c", ver: "10.2.0" },
-					java: { lang: "java", ver: "15.0.2" },
-					javascript: { lang: "javascript", ver: "18.15.0" },
-					typescript: { lang: "typescript", ver: "5.0.3" },
-					go: { lang: "go", ver: "1.16.2" },
-					rust: { lang: "rust", ver: "1.68.2" },
-					csharp: { lang: "csharp", ver: "6.12.0" },
-					ruby: { lang: "ruby", ver: "3.0.1" },
-					php: { lang: "php", ver: "8.2.3" },
-					swift: { lang: "swift", ver: "5.3.3" },
-					kotlin: { lang: "kotlin", ver: "1.8.20" },
-					bash: { lang: "bash", ver: "5.2.0" },
-					haskell: { lang: "haskell", ver: "9.2.7" },
-				};
-
-				const pLang = pistonLangMap[language] || { lang: language, ver: "*" };
-
-				const fallbackRes = await axios.post("https://emkc.org/api/v2/piston/execute", {
-					language: pLang.lang,
-					version: pLang.ver,
-					files: [{ content: code }],
-					stdin: stdin,
-				});
+				const response = await axios.post(
+					endpoint,
+					{
+						sourceCode: code,
+						language: language,
+						stdin: stdin,
+					},
+					{ timeout: 15000 }
+				);
 
 				const endTime = performance.now();
 				const duration = ((endTime - startTime) / 1000).toFixed(2);
-				const runResult = fallbackRes.data.run || fallbackRes.data.compile;
-				const stdout = runResult.stdout || "";
-				const stderr = runResult.stderr || "";
-				const outputText = stdout + (stderr ? `\n[Errors]:\n${stderr}` : "");
+				const data = response.data;
+
+				let outputText = "";
+				if (data.stdout) outputText += data.stdout;
+				if (data.stderr) {
+					if (outputText) outputText += "\n";
+					outputText += `[Error]:\n${data.stderr}`;
+				}
+				if (data.compile_output) {
+					if (outputText) outputText += "\n";
+					outputText += `[Compiler Output]:\n${data.compile_output}`;
+				}
+
+				const isError = Boolean(data.stderr || (data.compile_output && !data.stdout));
 
 				setExecutionResult({
-					status: runResult.code === 0 ? "success" : "error",
+					status: isError ? "error" : "success",
 					output: outputText.trim() || "(No output produced)",
 					executionTime: `${duration}s`,
 				});
 
-				if (runResult.code === 0) {
+				if (!isError) {
 					toast.success("Execution completed!");
 				} else {
 					toast.error("Execution produced errors.");
 				}
-			} catch (fallbackError) {
+				executionSuccess = true;
+				break;
+			} catch (err) {
+				console.warn(`Compiler endpoint ${endpoint} attempt failed:`, err?.message);
+			}
+		}
+
+		// Attempt 2: Judge0 CE CORS-enabled Execution Engine (100% CORS-friendly fallback for static GitHub Pages)
+		if (!executionSuccess) {
+			try {
+				const judge0LangMap = {
+					python: 71,
+					cpp: 105,
+					c: 103,
+					java: 62,
+					javascript: 93,
+					typescript: 94,
+					go: 106,
+					rust: 108,
+					csharp: 51,
+					ruby: 72,
+					php: 98,
+					swift: 83,
+					kotlin: 78,
+					bash: 46,
+					haskell: 61,
+				};
+
+				const langId = judge0LangMap[language] || 71;
+
+				const res = await axios.post(
+					"https://ce.judge0.com/submissions?wait=true",
+					{
+						source_code: code,
+						language_id: langId,
+						stdin: stdin || "",
+					},
+					{
+						headers: { "Content-Type": "application/json" },
+						timeout: 25000,
+					}
+				);
+
+				const endTime = performance.now();
+				const duration = ((endTime - startTime) / 1000).toFixed(2);
+				const data = res.data;
+
+				const stdout = data.stdout || "";
+				const stderr = data.stderr || "";
+				const compileOutput = data.compile_output || "";
+				const statusDesc = data.status?.description || "";
+
+				let outputText = stdout;
+				if (stderr) {
+					if (outputText) outputText += "\n";
+					outputText += `[Error]:\n${stderr}`;
+				}
+				if (compileOutput) {
+					if (outputText) outputText += "\n";
+					outputText += `[Compiler Output]:\n${compileOutput}`;
+				}
+
+				const isError = Boolean(
+					(data.status && data.status.id !== 3) || stderr || compileOutput
+				);
+
+				setExecutionResult({
+					status: isError ? "error" : "success",
+					output: outputText.trim() || statusDesc || "(No output produced)",
+					executionTime: `${duration}s`,
+				});
+
+				if (!isError) {
+					toast.success("Execution completed!");
+				} else {
+					toast.error(`Execution failed: ${statusDesc || "Produced errors"}`);
+				}
+				executionSuccess = true;
+			} catch (judgeErr) {
+				console.error("Judge0 execution fallback failed:", judgeErr?.message);
 				setExecutionResult({
 					status: "error",
-					output: `Execution failed: ${error.message || "Network error"}`,
+					output: `Execution failed: ${judgeErr?.message || "Network Error"}`,
 				});
-				toast.error("Execution request failed.");
+				toast.error("Code execution failed. Please check network connection.");
 			}
-		} finally {
-			setIsExecuting(false);
 		}
+
+		setIsExecuting(false);
 	};
 
 	const handleRunCodeRef = useRef(handleRunCode);

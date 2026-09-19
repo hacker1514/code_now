@@ -30,52 +30,56 @@ export async function sendCodeNowAIMessage(message, context = []) {
 
   // 3. Format message with Code Now AI system directive wrapper
   const formattedMessage = `[System Directive: Respond strictly as Code Now AI. Focus exclusively on coding, debugging, and software development.]\n${message}`;
-
   const payload = { message: formattedMessage, context: slicedContext };
 
-  // Attempt 1: Vite dev server proxy (/api/ai/chat)
-  try {
-    const response = await axios.post("/api/ai/chat", payload, {
-      headers: { "Content-Type": "application/json" },
-      timeout: 25000,
-    });
-    if (response.data && response.data.message) {
-      return response.data.message;
-    }
-  } catch (proxyErr) {
-    console.warn("Code Now AI Proxy Failed, attempting CORS proxy fallback...", proxyErr?.message);
+  // Attempt 1: Direct backend / Dev server proxy endpoints
+  const endpoints = [
+    "/api/ai/chat",
+    "https://naipunyam-chatbot.rnit.ai/api/chat"
+  ];
 
-    // Attempt 2: CORS Proxy fallback for static production servers
+  for (const endpoint of endpoints) {
     try {
-      const fallbackUrl =
-        "https://corsproxy.io/?" + encodeURIComponent("https://naipunyam-chatbot.rnit.ai/api/chat");
-      const fallbackRes = await axios.post(fallbackUrl, payload, {
+      const response = await axios.post(endpoint, payload, {
         headers: { "Content-Type": "application/json" },
-        timeout: 25000,
+        timeout: 10000,
       });
-      if (fallbackRes.data && fallbackRes.data.message) {
-        return fallbackRes.data.message;
+      if (response.data && response.data.message) {
+        return response.data.message;
       }
-    } catch (fallbackErr) {
-      console.warn("CORS Proxy Failed, attempting direct endpoint...", fallbackErr?.message);
-
-      // Attempt 3: Direct API endpoint
-      try {
-        const directRes = await axios.post("https://naipunyam-chatbot.rnit.ai/api/chat", payload, {
-          headers: { "Content-Type": "application/json" },
-          timeout: 25000,
-        });
-        if (directRes.data && directRes.data.message) {
-          return directRes.data.message;
-        }
-      } catch (directErr) {
-        throw new Error(
-          directErr.response?.data?.message ||
-            directErr.message ||
-            "Failed to communicate with Code Now AI engine."
-        );
-      }
+    } catch (err) {
+      console.warn(`Code Now AI endpoint ${endpoint} attempt failed:`, err?.message);
     }
+  }
+
+  // Attempt 2: CORS-enabled High-Speed AI Engine Fallback (100% CORS-friendly for GitHub Pages)
+  try {
+    const formattedMessages = [
+      {
+        role: "system",
+        content: "You are Code Now AI, the official AI programming assistant for the Code Now IDE platform. Focus exclusively on programming, code analysis, debugging, and software development."
+      },
+      ...slicedContext.map(msg => ({
+        role: msg.role === "assistant" ? "assistant" : "user",
+        content: msg.content
+      })),
+      { role: "user", content: message }
+    ];
+
+    const fallbackRes = await axios.post("https://text.pollinations.ai/", {
+      messages: formattedMessages,
+      model: "openai"
+    }, {
+      headers: { "Content-Type": "application/json" },
+      timeout: 20000
+    });
+
+    if (fallbackRes.data) {
+      const reply = typeof fallbackRes.data === "string" ? fallbackRes.data : JSON.stringify(fallbackRes.data);
+      if (reply.trim()) return reply.trim();
+    }
+  } catch (fallbackErr) {
+    console.error("Code Now AI fallback engine failed:", fallbackErr?.message);
   }
 
   throw new Error("Failed to receive response from Code Now AI engine.");
