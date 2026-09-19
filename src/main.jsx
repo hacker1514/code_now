@@ -43,7 +43,7 @@ if ("serviceWorker" in navigator) {
 	window.addEventListener("load", () => {
 		const swPath = `${import.meta.env.BASE_URL}sw.js`;
 		navigator.serviceWorker
-			.register(swPath)
+			.register(swPath, { scope: import.meta.env.BASE_URL })
 			.then((reg) => console.log("Code Now PWA Service Worker registered:", reg.scope))
 			.catch((err) => console.log("Service Worker registration failed:", err));
 	});
