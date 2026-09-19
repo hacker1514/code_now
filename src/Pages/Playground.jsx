@@ -523,11 +523,10 @@ export default function Playground() {
 		let executionSuccess = false;
 		const startTime = performance.now();
 
-		// Attempt 1: NextLeet Compiler Backend (/api proxy or direct endpoint)
-		const compilerEndpoints = [
-			"/api/compiler/execute",
-			"https://playground.nextleet.com/api/compiler/execute",
-		];
+		// In local development try dev proxy; in production (GitHub Pages) skip directly to CORS execution engine
+		const compilerEndpoints = import.meta.env.DEV
+			? ["/api/compiler/execute", "https://playground.nextleet.com/api/compiler/execute"]
+			: [];
 
 		for (const endpoint of compilerEndpoints) {
 			try {
