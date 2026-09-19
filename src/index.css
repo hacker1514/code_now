@@ -1,12 +1,32 @@
 @import "tailwindcss";
 
-.hide-scrollbar::-webkit-scrollbar {
-	display: none;
+/* Global sleek dark scrollbars */
+::-webkit-scrollbar {
+	width: 5px;
+	height: 5px;
+}
+::-webkit-scrollbar-track {
+	background: #000000;
+}
+::-webkit-scrollbar-thumb {
+	background: #262626;
+	border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+	background: #3f3f46;
 }
 
-.hide-scrollbar {
-	-ms-overflow-style: none; /* IE and Edge */
-	scrollbar-width: none; /* Firefox */
+.hide-scrollbar::-webkit-scrollbar,
+select::-webkit-scrollbar {
+	display: none !important;
+	width: 0 !important;
+	height: 0 !important;
+}
+
+.hide-scrollbar,
+select {
+	-ms-overflow-style: none !important; /* IE and Edge */
+	scrollbar-width: none !important; /* Firefox */
 }
 
 @keyframes shake {

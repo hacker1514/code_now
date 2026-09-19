@@ -8,6 +8,19 @@ export default defineConfig({
 	server: {
 		host: "0.0.0.0",
 		allowedHosts: ["f5546ea873db.ngrok-free.app"],
+		proxy: {
+			"/api/compiler": {
+				target: "https://playground.nextleet.com",
+				changeOrigin: true,
+				secure: false,
+			},
+			"/api/ai": {
+				target: "https://naipunyam-chatbot.rnit.ai",
+				changeOrigin: true,
+				secure: false,
+				rewrite: (path) => path.replace(/^\/api\/ai/, "/api"),
+			},
+		},
 	},
 	plugins: [react(), tailwindcss()],
 	resolve: {

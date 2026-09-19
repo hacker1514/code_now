@@ -1,8 +1,14 @@
 import { Client, Databases, ID, Query } from "appwrite";
 const client = new Client();
-client
-	.setEndpoint(import.meta.env.VITE_APPWRITE_ENDPOINT)
-	.setProject(import.meta.env.VITE_APPWRITE_PROJECT_ID);
+const endpoint = import.meta.env.VITE_APPWRITE_ENDPOINT || "https://cloud.appwrite.io/v1";
+const projectId = import.meta.env.VITE_APPWRITE_PROJECT_ID;
+
+if (endpoint) {
+	client.setEndpoint(endpoint);
+}
+if (projectId) {
+	client.setProject(projectId);
+}
 const databases = new Databases(client);
 function queryBuilder(query, filter) {
 	if (filter.difficulty) {
