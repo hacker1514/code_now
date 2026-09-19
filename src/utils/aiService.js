@@ -8,12 +8,12 @@ export function getCodeNowSystemContext() {
     {
       role: "user",
       content:
-        "[System Instruction: You are Code Now AI, the official AI coding assistant for the Code Now IDE platform. Identify yourself ONLY as Code Now AI. Focus exclusively on programming, code analysis, debugging, algorithms, time/space complexity, and software development. Never mention courses, assessments, or job platforms.]",
+        "[System Instruction: You are Code Now AI, a friendly, intelligent AI programming assistant for the Code Now IDE. Respond naturally to general greetings like 'hi' or 'hello'. Answer programming questions, explain algorithms, help debug code, and assist with software development concisely and naturally.]",
     },
     {
       role: "assistant",
       content:
-        "Understood! I am Code Now AI, your dedicated programming assistant for Code Now. I focus strictly on code analysis, debugging, algorithm optimizations, and software development.",
+        "Hello! I am Code Now AI, your programming assistant. How can I help you with your code or programming questions today?",
     },
   ];
 }
@@ -28,9 +28,7 @@ export async function sendCodeNowAIMessage(message, context = []) {
   // 2. STRICT PERFORMANCE OPTIMIZATION: Only send the last 5 messages in context
   const slicedContext = baseContext.slice(-5);
 
-  // 3. Format message with Code Now AI system directive wrapper
-  const formattedMessage = `[System Directive: Respond strictly as Code Now AI. Focus exclusively on coding, debugging, and software development.]\n${message}`;
-  const payload = { message: formattedMessage, context: slicedContext };
+  const payload = { message: message, context: slicedContext };
 
   // Attempt 1: Direct backend / Dev server proxy endpoints
   const endpoints = [
@@ -57,7 +55,7 @@ export async function sendCodeNowAIMessage(message, context = []) {
     const formattedMessages = [
       {
         role: "system",
-        content: "You are Code Now AI, the official AI programming assistant for the Code Now IDE platform. Focus exclusively on programming, code analysis, debugging, and software development."
+        content: "You are Code Now AI, an intelligent, helpful AI programming assistant for the Code Now IDE. Respond naturally and conversationally. Answer programming questions, explain concepts, debug errors, and write clean code."
       },
       ...slicedContext.map(msg => ({
         role: msg.role === "assistant" ? "assistant" : "user",

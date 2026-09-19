@@ -219,11 +219,8 @@ export default function Playground() {
 		setAiMessages((prev) => [...prev, { role: "user", content: promptToSend }]);
 		scrollToAIChatBottom();
 
-		// Automatically include user's current editor code context in the prompt
-		const messageWithCodeContext = `User Question: ${promptToSend}\n\nCurrent Editor Code (${language}):\n\`\`\`${language}\n${code}\n\`\`\``;
-
 		try {
-			const aiReply = await sendCodeNowAIMessage(messageWithCodeContext, aiContext);
+			const aiReply = await sendCodeNowAIMessage(promptToSend, aiContext);
 			setAiMessages((prev) => [...prev, { role: "assistant", content: aiReply }]);
 			setAiContext((prev) => [
 				...prev,
